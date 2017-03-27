@@ -11,7 +11,6 @@ from collections import Counter
 from pandas import Series, DataFrame
 from time import time
 
-
 # ------------------------------------ TO DO -----------------------------------------
 '''
   1. Normalize word occurance value(will do this in modeling process, save file length as a feature)
@@ -21,7 +20,7 @@ from time import time
 startTime = time() 
 
 # ------------------------------------- Declaring variables -------------------------
-path = '/home/abhijeet/Documents/Research/DataSetBooks/' + str(sys.argv[1]) + '/'
+path = str(os.getcwd()) + '/' + str(sys.argv[1]) + '/'
 allGenre = {'Crime':1,'Children':2,'Fiction':3,'Geography':4,'History':5,'Psychology':6,'Religion':7}
 genre = allGenre[str(sys.argv[1])]
 
@@ -176,9 +175,18 @@ for itr,file in enumerate(text_files[:n]):
         endIndex = count - 1
       count += 1
     print "*", startIndex, endIndex
-    text.seek(0)
+    
+    text.seek(startIndex)
+
+    count = startIndex
+	cleanedText = ""
+	for line in text:
+		if count <= endIndex:
+			cleanedText += line
+		count += 1
+
     # print text.read().decode('utf-8')
-    preprocess(text.read().decode('utf-8'),itr)
+    preprocess(cleanedText.read().decode('utf-8'),itr)
 # -----------------------------------------------------------------------------------------
 
 wordnet.append('totalWords')
