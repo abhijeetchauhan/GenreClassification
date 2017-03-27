@@ -11,6 +11,8 @@ from collections import Counter
 from pandas import Series, DataFrame
 from time import time
 
+#print os.getcwd()
+
 # ------------------------------------ TO DO -----------------------------------------
 '''
   1. Normalize word occurance value(will do this in modeling process, save file length as a feature)
@@ -33,9 +35,11 @@ stop = set(stopwords.words('english'))
 
 text_files= [f for f in os.listdir(path) if f.endswith('.txt')]
 bookId = []
-n= 2 # len(text_files) # No of text files
+n= len(text_files) # No of text files
+print n
 wordnet = []
 features = {}
+extendedFeatures = []
 totalWords = []
 temp =[0]*n
 for text in text_files:
@@ -129,9 +133,10 @@ def transform(synsetName):  # updating synset to related synset
     return result
 
 def preprocess(text,fileno):
+    # print '{'
     sentences = re.findall(r"\w+(?:[-']\w+)*|'|[-.(]+|\S\w*", text.lower())
     totalWords.append(len(sentences))
-    print totalWords
+    # print totalWords
     sentences = [sent for sent in sentences if re.compile("^\w+").match(sent) and re.compile("^[^0-9]").match(sent)]
     sentences = [sent for sent in sentences if sent not in stop and len(sent)>2]
     words = Counter(sentences).keys() # equals to list(set(words))
@@ -139,16 +144,20 @@ def preprocess(text,fileno):
     uniqueSet = {}
     for i in range(0,len(words)):
         uniqueSet[words[i]] = frequency[i]
-    result = []
+    extendedResult =[]
+    # result = []
     for sent in uniqueSet:
         try:
             answer = most_frequent_sense(str(sent))
+            # print (str(sent)+':'+str(answer.name())+',')
             transformed = transform(answer.name())[0]
-            result.append((sent,transformed))
+            extendedResult.append((sent,answer.name()))
+            # result.append((sent,transformed))
             features[str(transformed)] = [item+uniqueSet[sent] if x==fileno else item for x,item in enumerate(features[str(transformed)])]
         except:
             pass
-    return result
+    # print '\b}'
+    return extendedResult
 # ------------------------------------------------------------------------------------
 
 # ---------------------------- Parse data and save to .csv file -----------------------
@@ -175,23 +184,34 @@ for itr,file in enumerate(text_files[:n]):
         endIndex = count - 1
       count += 1
     print "*", startIndex, endIndex
-    
     text.seek(startIndex)
 
     count = startIndex
-	cleanedText = ""
-	for line in text:
-		if count <= endIndex:
-			cleanedText += line
-		count += 1
-
+    cleanedText = ""
+    for line in text:
+        if count <= endIndex:
+            cleanedText += line
+        count += 1
     # print text.read().decode('utf-8')
-    preprocess(cleanedText.read().decode('utf-8'),itr)
+    extendedResult = preprocess(cleanedText.decode('utf-8'),itr)
+    extendedFeatures.append(extendedResult)
+
+  else:
+    totalWords.append(0)
 # -----------------------------------------------------------------------------------------
 
 wordnet.append('totalWords')
 features['totalWords'] = totalWords
+print features
 result = DataFrame(features,columns=wordnet)
 result.to_csv( str(sys.argv[1]) + '.csv')
 
-print time() - startTime
+try:
+    output = open(os.getcwd() + '/' + str(sys.argv[1]) + 'Output.txt', 'w')
+    output.write(str(extendedFeatures))
+    output.close()
+except:
+    print path + str(sys.argv[1]) + 'Output.txt'
+
+# print extendedFeatures
+print float(time() - startTime)/60
